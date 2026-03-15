@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Voxel Mobile FINAL</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<style>
+body{margin:0;overflow:hidden;background:#87ceeb;touch-action:none;font-family:Arial}
+#cross{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);color:white;font-size:26px;z-index:10}
+#joy{position:fixed;left:20px;bottom:20px;width:120px;height:120px;background:rgba(0,0,0,.25);border-radius:50%;z-index:10}
+#stick{position:absolute;left:40px;top:40px;width:40px;height:40px;background:rgba(255,255,255,.8);border-radius:50%}
+.btn{position:fixed;right:20px;width:70px;height:70px;background:rgba(0,0,0,.45);color:white;border-radius:14px;display:flex;align-items:center;justify-content:center;z-index:10}
+#break{bottom:200px} #place{bottom:120px} #jump{bottom:40px}
+#inv{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);display:flex;gap:6px;z-index:10}
+.slot{width:46px;height:46px;background:rgba(0,0,0,.45);border:2px solid #555;color:white;font-size:11px;
+display:flex;flex-direction:column;align-items:center;justify-content:center}
+.slot.sel{border-color:#fff}
+</style>
+</head>
+<body>
+  
+<button onclick="window.location.href='index.html'" style="
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 9999;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    border: 2px solid white;
+    padding: 8px 15px;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+">🏠 Menüye Dön</button>
+<div id="cross">+</div>
+<div id="joy"><div id="stick"></div></div>
+<div id="break" class="btn">KIR</div>
+<div id="place" class="btn">KOY</div>
+<div id="jump" class="btn">ZIPLA</div>
+<div id="inv"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+<script>
+// ===== BASIC =====
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x87ceeb);
+const camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,150);
+const renderer=new THREE.WebGLRenderer({antialias:false});
+renderer.setSize(innerWidth,innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// ===== LIGHT =====
+scene.add(new THREE.AmbientLight(0xffffff,.7));
+const sun=new THREE.DirectionalLight(0xffffff,.8);
+sun.position.set(40,60,20);
+scene.add(sun);
+
+// ===== PLAYER =====
+const player=new THREE.Object3D();
+player.position.set(0,15,0);
+scene.add(player);
+player.add(camera);
+camera.position.y=1.7;
+
+let pitch=0;
+const vel=new THREE.Vector3();
+let onGround=false;
+
+// ===== TEXTURE =====
+function tex(c1,c2,alpha=1,pattern=false){
+ const c=document.createElement("canvas");
+ c.width=c.height=32;
+ const g=c.getContext("2d");
+ g.globalAlpha=alpha;
+ g.fillStyle=c1; g.fillRect(0,0,32,32);
+ if(pattern){
+   // damarlı çizgiler için
+   g.strokeStyle=c2;
+   for(let i=0;i<6;i++){
+     g.beginPath();
+     g.moveTo(Math.random()*32,0);
+     g.lineTo(Math.random()*32,32);
+     g.stroke();
+   }
+ } else {
+   g.fillStyle=c2;
+   for(let i=0;i<120;i++) g.fillRect(Math.random()*32,Math.random()*32,1,1);
+ }
+ return new THREE.CanvasTexture(c);
+}
+
+const grassTop=tex("#3cb043","#2e8b57");
+const dirtTex=tex("#7a4a2a","#5a341a");
+const stoneTex=tex("#888","#666");
+const woodTex=tex("#8b5a2b","#5a3a1a",1,true); // <<< damarlı odun
+const leafTex=tex("#2f8f2f","#1e6b1e");
+const waterTex=tex("#3fa9f5","#1e6bd6",0.7);
+
+// ===== BLOCKS =====
+const blocks=[
+ [ // grass
+  new THREE.MeshLambertMaterial({map:dirtTex}),
+  new THREE.MeshLambertMaterial({map:dirtTex}),
+  new THREE.MeshLambertMaterial({map:grassTop}),
+  new THREE.MeshLambertMaterial({map:dirtTex}),
+  new THREE.MeshLambertMaterial({map:dirtTex}),
+  new THREE.MeshLambertMaterial({map:dirtTex})
+ ],
+ new THREE.MeshLambertMaterial({map:dirtTex}),
+ new THREE.MeshLambertMaterial({map:stoneTex}),
+ new THREE.MeshLambertMaterial({map:woodTex}),
+ new THREE.MeshLambertMaterial({map:leafTex}),
+ new THREE.MeshLambertMaterial({map:waterTex,transparent:true,opacity:.7})
+];
+
+// ===== INVENTORY =====
+const invData=[
+ {name:"Çim",count:100},    // 100 adet
+ {name:"Toprak",count:100}, // 100 adet
+ {name:"Taş",count:100},    // 100 adet
+ {name:"Odun",count:999},   // 999 adet
+ {name:"Yaprak",count:999}, // 999 adet
+ {name:"Cam",count:999}     // <<< Su artık Cam
+];
+let selected=0;
+const inv=document.getElementById("inv");
+
+function drawInv(){
+ inv.innerHTML="";
+ invData.forEach((b,i)=>{
+  const d=document.createElement("div");
+  d.className="slot"+(i===selected?" sel":"");
+  d.innerHTML=`${b.name}<br>${b.count}`;
+  d.onclick=()=>{selected=i;drawInv()};
+  inv.appendChild(d);
+ });
+}
+drawInv();
+
+// ===== WORLD / CHUNK =====
+const geo=new THREE.BoxGeometry(1,1,1);
+const world=new Map();
+const K=(x,y,z)=>`${x},${y},${z}`;
+const CHUNK=16;
+const VIEW_CHUNK=2;
+
+function add(x,y,z,t){
+ const k=K(x,y,z);
+ if(world.has(k))return;
+ const m=new THREE.Mesh(geo,blocks[t]);
+ m.position.set(x+.5,y+.5,z+.5);
+ m.userData={x,y,z,t};
+ scene.add(m);
+ world.set(k,m);
+}
+
+function removeBlock(m){
+ const {x,y,z,t}=m.userData;
+ scene.remove(m);
+ world.delete(K(x,y,z));
+ invData[t].count++;
+ drawInv();
+}
+
+function genChunk(cx,cz){
+ for(let x=0;x<CHUNK;x++)
+ for(let z=0;z<CHUNK;z++){
+  const wx=cx*CHUNK+x;
+  const wz=cz*CHUNK+z;
+  const h=6+Math.floor(Math.sin(wx*.1)+Math.cos(wz*.1));
+  for(let y=0;y<h;y++){
+   let t=y===h-1?0:y>h-4?1:2;
+   add(wx,y,wz,t);
+  }
+ }
+}
+
+const loadedChunks=new Set();
+function updateChunks(){
+ const cx=Math.floor(player.position.x/CHUNK);
+ const cz=Math.floor(player.position.z/CHUNK);
+ for(let dx=-VIEW_CHUNK;dx<=VIEW_CHUNK;dx++)
+ for(let dz=-VIEW_CHUNK;dz<=VIEW_CHUNK;dz++){
+  const key=`${cx+dx},${cz+dz}`;
+  if(!loadedChunks.has(key)){
+   genChunk(cx+dx,cz+dz);
+   loadedChunks.add(key);
+  }
+ }
+}
+
+// ===== JOYSTICK =====
+const joy=document.getElementById("joy");
+const stick=document.getElementById("stick");
+let joyVec={x:0,y:0},jid=null;
+
+joy.ontouchstart=e=>jid=e.changedTouches[0].identifier;
+joy.ontouchmove=e=>{
+ for(const t of e.touches)if(t.identifier===jid){
+  const r=joy.getBoundingClientRect();
+  let dx=t.clientX-r.left-60,dy=t.clientY-r.top-60;
+  const d=Math.min(40,Math.hypot(dx,dy));
+  const a=Math.atan2(dy,dx);
+  joyVec.x=Math.cos(a)*(d/40);
+  joyVec.y=Math.sin(a)*(d/40);
+  stick.style.left=40+joyVec.x*40+"px";
+  stick.style.top=40+joyVec.y*40+"px";
+ }
+};
+joy.ontouchend=()=>{jid=null;joyVec={x:0,y:0};stick.style.left=stick.style.top="40px"};
+
+// ===== ACTIONS =====
+const ray=new THREE.Raycaster();
+ray.far=5;
+
+document.getElementById("break").ontouchstart=()=>{
+ ray.setFromCamera({x:0,y:0},camera);
+ const h=ray.intersectObjects([...world.values()])[0];
+ if(h) removeBlock(h.object);
+};
+
+document.getElementById("place").ontouchstart=()=>{
+ if(invData[selected].count<=0) return;
+ ray.setFromCamera({x:0,y:0},camera);
+ const h=ray.intersectObjects([...world.values()])[0];
+ if(!h)return;
+ const n=h.face.normal;
+ const p=h.object.userData;
+ add(p.x+n.x,p.y+n.y,p.z+n.z,selected);
+ invData[selected].count--;
+ drawInv();
+};
+
+document.getElementById("jump").ontouchstart=()=>{
+ if(onGround){vel.y=0.48;onGround=false}
+};
+
+// ===== UPDATE =====
+function solid(x,y,z){return world.has(K(x,y,z))}
+function update(){
+ vel.y-=0.09;
+ const move=new THREE.Vector3(joyVec.x,0,joyVec.y).applyAxisAngle(new THREE.Vector3(0,1,0),player.rotation.y);
+ vel.add(move.multiplyScalar(0.06));
+
+ const next=player.position.clone().add(vel);
+
+ function can(nx,ny,nz){
+  for(let y=0;y<1.8;y+=0.4)
+   if(solid(Math.floor(nx),Math.floor(ny+y),Math.floor(nz)))return false;
+  return true;
+ }
+
+ if(can(next.x,player.position.y,player.position.z))player.position.x=next.x;
+ if(can(player.position.x,player.position.y,next.z))player.position.z=next.z;
+ if(can(player.position.x,next.y,player.position.z)){player.position.y=next.y;onGround=false}
+ else{vel.y=0;onGround=true}
+
+ vel.x*=0.7; vel.z*=0.7;
+ updateChunks();
+ renderer.render(scene,camera);
+ requestAnimationFrame(update);
+}
+update();
+
+// ===== CAMERA MOVEMENT (JOY + TOUCH) =====
+let camId=null,lx=0,ly=0;
+renderer.domElement.addEventListener("touchstart",e=>{
+ for(const t of e.changedTouches){
+  if(t.target.closest("#joy")||t.target.closest(".btn")||t.target.closest("#inv"))continue;
+  camId=t.identifier; lx=t.clientX; ly=t.clientY;
+ }
+});
+renderer.domElement.addEventListener("touchmove",e=>{
+ for(const t of e.touches)if(t.identifier===camId){
+  const dx=t.clientX-lx,dy=t.clientY-ly;
+  lx=t.clientX; ly=t.clientY;
+  player.rotation.y -= dx*0.004;
+  pitch -= dy*0.004;
+  pitch=Math.max(-1.5,Math.min(1.5,pitch));
+  camera.rotation.x = pitch;
+ }
+});
+renderer.domElement.addEventListener("touchend",e=>{
+ for(const t of e.changedTouches) if(t.identifier===camId) camId=null;
+});
+</script>
+</body>
+</html>

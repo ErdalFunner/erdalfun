@@ -1,0 +1,1567 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>Mega Mini BS – Final v2</title>
+<style>
+  :root{
+    --bg:#070a12;
+    --panel:rgba(255,255,255,.06);
+    --b:rgba(255,255,255,.14);
+    --t:#eaf1ff;
+    --m:#9fb0d1;
+    --ok:#57ffb2;
+    --acc:#6ee7ff;
+    --bad:#ff5c7a;
+    --gold:#ffd36e;
+    --r:18px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;margin:0;background:
+    radial-gradient(900px 600px at 20% 20%,#142041 0%,transparent 55%),
+    radial-gradient(900px 600px at 80% 40%,#2a1342 0%,transparent 55%), var(--bg);
+    color:var(--t); font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+    overscroll-behavior:none;
+  }
+  .app{height:100%;display:flex;flex-direction:column}
+  header{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+    padding:12px;border-bottom:1px solid var(--b);background:rgba(0,0,0,.18)
+  }
+  .left{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .pill{
+    display:inline-flex;gap:8px;align-items:center;
+    padding:8px 10px;border-radius:999px;border:1px solid var(--b);background:rgba(255,255,255,.06);
+    color:var(--m);font-size:12px;user-select:none;white-space:nowrap
+  }
+  .pill b{color:var(--t)}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center;flex:1}
+  .tabs button, .right button, .btn{
+    appearance:none;border:1px solid var(--b);background:rgba(255,255,255,.06);color:var(--t);
+    padding:10px 12px;border-radius:14px;cursor:pointer;font-weight:900;letter-spacing:.2px;
+    transition:.12s;user-select:none
+  }
+  .tabs button.active{border-color:rgba(110,231,255,.45);background:rgba(110,231,255,.10)}
+  .tabs button:active,.right button:active,.btn:active{transform:scale(.98)}
+  .right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+  main{flex:1;display:flex;min-height:0}
+  .screen{display:none;flex:1;padding:12px;min-height:0}
+  .screen.active{display:flex}
+  .panel{
+    flex:1;border:1px solid var(--b);background:var(--panel);
+    border-radius:var(--r);padding:12px;overflow:auto
+  }
+
+  .menuWrap{display:grid;grid-template-columns:1fr;gap:12px;align-content:start}
+  .hero{
+    border:1px solid var(--b);border-radius:var(--r);
+    background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+    padding:12px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap
+  }
+  .charCard{display:flex;gap:12px;align-items:center}
+  .avatar{
+    width:68px;height:68px;border-radius:18px;border:1px solid var(--b);background:rgba(0,0,0,.18);
+    display:grid;place-items:center;font-weight:1000;font-size:14px
+  }
+  .meta{display:flex;flex-direction:column;gap:4px}
+  .meta b{font-size:14px}
+  .meta span{font-size:12px;color:var(--m)}
+  .rowBtns{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .playBtn{
+    padding:12px 16px;border-radius:16px;
+    border-color:rgba(87,255,178,.45);
+    background:rgba(87,255,178,.12)
+  }
+
+  /* Modal */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:14px;z-index:50}
+  .modal.show{display:flex}
+  .modalCard{
+    width:min(560px,100%);
+    border:1px solid var(--b);border-radius:20px;background:rgba(10,14,22,.92);
+    box-shadow:0 24px 70px rgba(0,0,0,.65);padding:12px
+  }
+  .modalTop{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 6px 10px}
+  .modalTop b{font-size:14px}
+  .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .pick{
+    border:1px solid var(--b);border-radius:18px;padding:10px;background:rgba(255,255,255,.05);
+    display:flex;flex-direction:column;gap:8px;cursor:pointer;user-select:none;transition:.12s
+  }
+  .pick:active{transform:scale(.99)}
+  .pick.selected{outline:2px solid rgba(110,231,255,.40)}
+  .pick .big{
+    height:88px;border-radius:16px;border:1px solid var(--b);background:rgba(0,0,0,.18);
+    display:grid;place-items:center;font-weight:1000
+  }
+  .pick small{color:var(--m)}
+  .modalBottom{display:flex;justify-content:space-between;gap:10px;padding-top:10px;flex-wrap:wrap;align-items:center}
+  .modalBottom .btn{flex:1}
+  .btn.ghost{background:rgba(255,255,255,.04)}
+  .btn.primary{border-color:rgba(110,231,255,.45);background:rgba(110,231,255,.10)}
+  .btn:disabled{opacity:.5}
+
+  /* Game */
+  #gameCanvas{
+    width:100%;height:100%;
+    border-radius:var(--r);
+    border:1px solid var(--b);
+    background:rgba(10,14,22,.65);
+    display:block;
+    touch-action:none;
+  }
+  .hud{position:absolute;inset:0;pointer-events:none}
+  .topHud{
+    position:absolute;left:12px;right:12px;top:12px;
+    display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;align-items:center
+  }
+  .hudBox{
+    border:1px solid var(--b);border-radius:14px;background:rgba(0,0,0,.22);
+    padding:8px 10px;color:var(--m);font-size:12px;
+    display:flex;gap:8px;align-items:center;white-space:nowrap
+  }
+  .hudBox b{color:var(--t)}
+  .toast{
+    position:absolute;left:50%;top:54px;transform:translateX(-50%);
+    border:1px solid var(--b);border-radius:999px;background:rgba(0,0,0,.28);
+    padding:8px 12px;font-size:12px;color:var(--t);
+    opacity:0;transition:.2s
+  }
+  .toast.show{opacity:1}
+
+  /* Joysticks */
+  .joy{
+    position:absolute;width:150px;height:150px;border-radius:999px;
+    border:1px solid var(--b);background:rgba(0,0,0,.22);backdrop-filter:blur(8px);
+    pointer-events:auto;touch-action:none
+  }
+  .joy .knob{
+    position:absolute;left:50%;top:50%;
+    width:56px;height:56px;border-radius:999px;border:1px solid var(--b);
+    background:rgba(255,255,255,.10);
+    transform:translate(-50%,-50%)
+  }
+  #moveJoy{left:16px;bottom:16px}
+  #atkJoy{right:16px;bottom:16px;width:160px;height:160px}
+  #supJoy{right:18px;bottom:190px;width:120px;height:120px}
+
+  /* SUPER ready pulse */
+  @keyframes superPulse{
+    0%{box-shadow:0 0 0 rgba(255,211,110,0.0)}
+    50%{box-shadow:0 0 18px rgba(255,211,110,0.55),0 0 36px rgba(255,211,110,0.25)}
+    100%{box-shadow:0 0 0 rgba(255,211,110,0.0)}
+  }
+  #supJoy.ready{
+    border-color:rgba(255,211,110,.65);
+    background:rgba(255,211,110,.10);
+    animation:superPulse 1.0s infinite;
+  }
+
+  .miniBtn{
+    border:1px solid var(--b);background:rgba(255,255,255,.06);color:var(--t);
+    padding:10px 12px;border-radius:14px;font-weight:900
+  }
+  .miniBtnRow{
+    position:absolute;top:12px;right:12px;pointer-events:auto;
+    display:flex;gap:8px
+  }
+
+  /* Result screen overlay */
+  .resultOverlay{
+    position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+    background:rgba(0,0,0,.55);z-index:40;padding:14px;pointer-events:auto
+  }
+  .resultOverlay.show{display:flex}
+  .resultCard{
+    width:min(520px,100%);
+    border:1px solid var(--b);border-radius:20px;background:rgba(10,14,22,.92);
+    box-shadow:0 24px 70px rgba(0,0,0,.65);padding:14px
+  }
+  .resultTitle{font-weight:1000;font-size:18px;margin:4px 0 8px}
+  .resultSub{color:var(--m);font-size:12px;margin-bottom:12px;line-height:1.35}
+  .resultBtns{display:flex;gap:10px;flex-wrap:wrap}
+  .resultBtns .btn{flex:1}
+</style>
+</head>
+<body>
+  <button onclick="window.location.href='index.html'" style="
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 9999;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    border: 2px solid white;
+    padding: 8px 15px;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+">🏠 Menüye Dön</button>
+<div class="app">
+  <header>
+    <div class="left">
+      <div class="pill">Kupa: <b id="trophy">0</b></div>
+      <div class="pill">Coin: <b id="coin">0</b></div>
+      <div class="pill">Elmas: <b id="gem">0</b></div>
+      <div class="pill">HP+: <b id="upHP">0</b></div>
+      <div class="pill">DMG+: <b id="upDMG">0</b></div>
+    </div>
+
+    <div class="tabs">
+      <button class="active" data-tab="menu">Menü</button>
+      <button data-tab="shop">Mağaza</button>
+      <button data-tab="quests">Görevler</button>
+      <button data-tab="settings">Ayarlar</button>
+    </div>
+
+    <div class="right">
+      <button id="charOpen">Karakter Seç</button>
+      <button id="playBtn" class="playBtn">PLAY</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="screen active" id="menu">
+      <div class="panel">
+        <div class="menuWrap">
+          <div class="hero">
+            <div class="charCard">
+              <div class="avatar" id="charAvatar">?</div>
+              <div class="meta">
+                <b id="charName">Karakter seç</b>
+                <span id="charInfo">Karakter Seç butonundan seç.</span>
+                <span id="trophyInfo">Kupam: 0</span>
+              </div>
+            </div>
+            <div class="rowBtns">
+              <button id="charChange" class="btn" style="display:none">Değiştir</button>
+              <button id="playBtn2" class="btn playBtn">PLAY</button>
+            </div>
+          </div>
+
+          <div class="panel" style="padding:12px">
+            <b>Yeni: v2</b>
+            <div style="margin-top:8px;font-size:12px;color:var(--m)">
+              • Bot sayısı <b>50</b> • AI daha agresif • Win/Lose ekranı<br>
+              • Hasar/Can <b>elmas</b> ile • Elmas: <b>500 coin</b> / 1 elmas<br>
+              • Kit/Edgar ulti menzili: ulti joystickini az çek → kısa, çok çek → uzun.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="shop">
+      <div class="panel">
+        <h3 style="margin:0 0 10px">Mağaza</h3>
+        <div id="shopList" style="display:grid;gap:10px"></div>
+        <div style="margin-top:12px;font-size:12px;color:var(--m)">
+          Not: Maç kazanınca coin yok. Coin: öldürme + görev ödülleri.
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="quests">
+      <div class="panel">
+        <h3 style="margin:0 0 10px">Görevler (3)</h3>
+        <div id="questList" style="display:grid;gap:10px"></div>
+        <div style="margin-top:12px;font-size:12px;color:var(--m)">
+          Görevler “zor ötesi” ama mantıklı 😄 Tamamlanınca otomatik yenilenir.
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="settings">
+      <div class="panel">
+        <h3 style="margin:0 0 10px">Ayarlar</h3>
+        <button id="resetAll" class="btn" style="width:100%">Hesabı / Kaydı Sıfırla</button>
+        <div style="margin-top:10px;font-size:12px;color:var(--m)">
+          Bu sürümde performans için bazı efektler hafif tutuldu (50 bot).
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="game">
+      <div class="panel" style="padding:0;position:relative;overflow:hidden">
+        <canvas id="gameCanvas"></canvas>
+
+        <div class="hud">
+          <div class="topHud">
+            <div class="hudBox">Sen: <b id="hudYou">—</b></div>
+            <div class="hudBox">HP: <b id="hudHP">0</b></div>
+            <div class="hudBox">Kalan: <b id="hudAlive">0</b></div>
+            <div class="hudBox">SUPER: <b id="hudSuper">0%</b></div>
+            <div class="hudBox">Süre: <b id="hudTime">0</b>s</div>
+          </div>
+
+          <div id="toast" class="toast">—</div>
+
+          <div class="joy" id="moveJoy"><div class="knob" id="moveKnob"></div></div>
+          <div class="joy" id="atkJoy"><div class="knob" id="atkKnob"></div></div>
+          <div class="joy" id="supJoy"><div class="knob" id="supKnob"></div></div>
+
+          <div class="miniBtnRow">
+            <button id="exitGame" class="miniBtn">Çık</button>
+            <button id="replayGame" class="miniBtn">Tekrar</button>
+          </div>
+
+          <!-- Win/Lose Overlay -->
+          <div class="resultOverlay" id="resultOverlay">
+            <div class="resultCard">
+              <div class="resultTitle" id="resultTitle">—</div>
+              <div class="resultSub" id="resultSub">—</div>
+              <div class="resultBtns">
+                <button class="btn ghost" id="resultMenu">Menü</button>
+                <button class="btn primary" id="resultReplay">Tekrar Oyna</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Character Modal -->
+<div class="modal" id="modal">
+  <div class="modalCard">
+    <div class="modalTop">
+      <b>Karakter Seç</b>
+      <button class="btn ghost" id="modalClose">Kapat</button>
+    </div>
+    <div class="grid3" id="pickGrid"></div>
+    <div class="modalBottom">
+      <button class="btn ghost" id="modalBack">Geri</button>
+      <button class="btn primary" id="modalPick" disabled>Seç</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ========= Helpers ========= */
+function $(s){ return document.querySelector(s); }
+function clamp(n,a,b){ return Math.max(a, Math.min(b,n)); }
+function rnd(a,b){ return a + Math.random()*(b-a); }
+function irnd(a,b){ return a + Math.floor(Math.random()*(b-a+1)); }
+function randId(){ return Math.random().toString(16).slice(2)+Date.now().toString(16); }
+
+/* ========= Save ========= */
+const STORE="megaMiniBS_v2_FINAL";
+let save = (()=>{ try{ return JSON.parse(localStorage.getItem(STORE)||"null") }catch(e){ return null } })()
+  || { trophy:0, coin:0, gem:0, upHP:0, upDMG:0, selected:null, quests:[] };
+
+function persist(){
+  localStorage.setItem(STORE, JSON.stringify(save));
+  renderTop(); renderMenu(); renderShop(); renderQuests();
+}
+
+/* ========= Config ========= */
+const BOT_COUNT = 50;
+
+/* ========= Characters ========= */
+const CHARS = [
+  { id:"kit", name:"KIT", color:"#7fffd4", role:"Support",
+    baseHP:3400, baseDMG:150, range:230, speed:150,
+    atk:{pellets:1, spread:0.30, cooldown:0.12, bulletSpeed:590, bulletRad:6, dmgMul:1.00},
+    sup:{type:"jump", range:360, radius:80, dmgMul:1.55} // range is max; joystick magnitude scales it
+  },
+  { id:"edgar", name:"EDGAR", color:"#c7a6ff", role:"Assassin",
+    baseHP:3200, baseDMG:260, range:190, speed:165,
+    atk:{pellets:1, spread:0.18, cooldown:0.18, bulletSpeed:610, bulletRad:5, dmgMul:1.00},
+    sup:{type:"jump", range:420, radius:70, dmgMul:1.85}
+  },
+  { id:"shelly", name:"SHELLY", color:"#ffd36e", role:"Fighter",
+    baseHP:3600, baseDMG:120, range:340, speed:138,
+    atk:{pellets:5, spread:0.95, cooldown:0.35, bulletSpeed:560, bulletRad:6, dmgMul:0.58},
+    sup:{type:"megaShot", range:460, pellets:13, spread:1.10, dmgMul:2.35, knock:210}
+  }
+];
+function getChar(id){ return CHARS.find(c=>c.id===id) || CHARS[0]; }
+
+/* ========= Tabs ========= */
+const tabs=[...document.querySelectorAll(".tabs button")];
+tabs.forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+function setTab(id){
+  tabs.forEach(x=>x.classList.toggle("active", x.dataset.tab===id));
+  ["menu","shop","quests","settings","game"].forEach(s=>$("#"+s).classList.remove("active"));
+  $("#"+id).classList.add("active");
+  if(id!=="game") stopGame();
+}
+
+/* ========= Toast ========= */
+let toastT=0;
+function toast(msg){
+  const t=$("#toast");
+  t.textContent=msg;
+  t.classList.add("show");
+  clearTimeout(toastT);
+  toastT=setTimeout(()=>t.classList.remove("show"), 1400);
+}
+
+/* ========= UI ========= */
+function renderTop(){
+  $("#trophy").textContent = save.trophy;
+  $("#coin").textContent = save.coin;
+  $("#gem").textContent = save.gem;
+  $("#upHP").textContent = save.upHP;
+  $("#upDMG").textContent = save.upDMG;
+}
+function renderMenu(){
+  const sel = save.selected ? getChar(save.selected) : null;
+  $("#charAvatar").textContent = sel ? sel.name : "?";
+  $("#charAvatar").style.color = sel ? sel.color : "rgba(233,240,255,.9)";
+  $("#charName").textContent = sel ? sel.name : "Karakter seç";
+  $("#charInfo").textContent = sel
+    ? `${sel.role} • HP ${sel.baseHP + save.upHP*260} • DMG ${sel.baseDMG + save.upDMG*22}`
+    : "Karakter Seç butonundan seç.";
+  $("#trophyInfo").textContent = `Kupam: ${save.trophy}`;
+  $("#charChange").style.display = sel ? "inline-flex" : "none";
+  $("#hudYou").textContent = sel ? sel.name : "—";
+}
+
+function shopItem(title, desc, rightHtml, onClick){
+  const div=document.createElement("div");
+  div.style.border="1px solid rgba(255,255,255,.14)";
+  div.style.background="rgba(0,0,0,.14)";
+  div.style.borderRadius="16px";
+  div.style.padding="12px";
+  div.style.display="flex";
+  div.style.justifyContent="space-between";
+  div.style.gap="10px";
+  div.style.flexWrap="wrap";
+  div.style.alignItems="center";
+  div.innerHTML=`
+    <div>
+      <div style="font-weight:1000">${title}</div>
+      <div style="font-size:12px;color:var(--m);margin-top:4px">${desc}</div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      ${rightHtml}
+      <button class="btn">Satın Al</button>
+    </div>
+  `;
+  div.querySelector("button").onclick=onClick;
+  return div;
+}
+
+function renderShop(){
+  const wrap=$("#shopList");
+  wrap.innerHTML="";
+
+  // Gems purchase
+  wrap.appendChild(shopItem(
+    "Elmas (1)",
+    "1 elmas = 500 coin. Elmas ile Can/Hasar alınır.",
+    `<div class="pill">Fiyat: <b>500 coin</b></div>`,
+    ()=>{
+      if(save.coin < 500){ toast("Coin yetmiyor"); return; }
+      save.coin -= 500;
+      save.gem += 1;
+      persist();
+      toast("+1 elmas");
+    }
+  ));
+
+  // HP upgrade: 2 gems
+  wrap.appendChild(shopItem(
+    "Can +260",
+    "Max HP artar. (2 elmas)",
+    `<div class="pill">Fiyat: <b>2 elmas</b></div>`,
+    ()=>{
+      if(save.gem < 2){ toast("Elmas yetmiyor"); return; }
+      save.gem -= 2;
+      save.upHP += 1;
+      persist();
+      toast("Can yükseltildi");
+    }
+  ));
+
+  // DMG upgrade: 3 gems
+  wrap.appendChild(shopItem(
+    "Hasar +22",
+    "Saldırı hasarın artar. (3 elmas)",
+    `<div class="pill">Fiyat: <b>3 elmas</b></div>`,
+    ()=>{
+      if(save.gem < 3){ toast("Elmas yetmiyor"); return; }
+      save.gem -= 3;
+      save.upDMG += 1;
+      persist();
+      toast("Hasar yükseltildi");
+    }
+  ));
+}
+
+/* ========= Quests (harder) ========= */
+function ensureQuests(){
+  if(!Array.isArray(save.quests)) save.quests=[];
+  while(save.quests.length < 3) save.quests.push(makeQuest());
+  save.quests = save.quests.slice(0,3);
+}
+function makeQuest(){
+  const types=["damage","kills","wins"];
+  const t=types[irnd(0,types.length-1)];
+  if(t==="damage"){
+    const need=irnd(25000,40000);
+    return {id:randId(), type:"damage", need, cur:0, reward:irnd(700,1200)}; // coin reward
+  }
+  if(t==="kills"){
+    const need=irnd(40,70);
+    return {id:randId(), type:"kills", need, cur:0, reward:irnd(800,1500)};
+  }
+  const need=irnd(5,10);
+  return {id:randId(), type:"wins", need, cur:0, reward:irnd(900,1700)};
+}
+function questTitle(q){
+  if(q.type==="damage") return "Hasar Ver (ZOR)";
+  if(q.type==="kills") return "Bot İndir (ZOR)";
+  return "Maç Kazan (ZOR)";
+}
+function questDesc(q){
+  return `İlerleme: ${q.cur}/${q.need} • Ödül: ${q.reward} coin`;
+}
+function renderQuests(){
+  ensureQuests();
+  const q=$("#questList");
+  q.innerHTML="";
+  save.quests.forEach((Q,idx)=>{
+    const pct=Math.min(100, (Q.cur/Q.need)*100);
+    const div=document.createElement("div");
+    div.style.border="1px solid rgba(255,255,255,.14)";
+    div.style.background="rgba(0,0,0,.14)";
+    div.style.borderRadius="16px";
+    div.style.padding="12px";
+    div.innerHTML=`
+      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        <div style="min-width:240px">
+          <div style="font-weight:1000">${idx+1}) ${questTitle(Q)}</div>
+          <div style="font-size:12px;color:var(--m);margin-top:4px">${questDesc(Q)}</div>
+        </div>
+        <div class="pill">${pct.toFixed(0)}%</div>
+      </div>
+      <div style="margin-top:10px;height:10px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--ok),var(--acc))"></div>
+      </div>
+    `;
+    q.appendChild(div);
+  });
+}
+function addQuestProgress(type, amount){
+  ensureQuests();
+  let changed=false;
+  for(let i=0;i<save.quests.length;i++){
+    const q=save.quests[i];
+    if(q.type!==type) continue;
+    q.cur = Math.min(q.need, q.cur + amount);
+    if(q.cur >= q.need){
+      save.coin += q.reward;
+      save.quests[i] = makeQuest();
+      toast(`Görev tamam! +${q.reward} coin`);
+    }
+    changed=true;
+  }
+  if(changed) persist();
+}
+
+/* ========= Character modal ========= */
+const modal=$("#modal");
+const pickGrid=$("#pickGrid");
+let tempPick=null;
+function openModal(){
+  tempPick=null;
+  $("#modalPick").disabled=true;
+  modal.classList.add("show");
+  pickGrid.innerHTML="";
+  CHARS.forEach(c=>{
+    const d=document.createElement("div");
+    d.className="pick";
+    d.innerHTML=`
+      <div class="big" style="color:${c.color}">${c.name}</div>
+      <b>${c.name}</b>
+      <small>${c.role}</small>
+      <small>${c.sup.type==="megaShot"?"Ulti: Mega Shot":"Ulti: Üstüne Atlama (Menzil ayarlı)"}</small>
+    `;
+    d.onclick=()=>{
+      [...pickGrid.children].forEach(x=>x.classList.remove("selected"));
+      d.classList.add("selected");
+      tempPick=c.id;
+      $("#modalPick").disabled=false;
+    };
+    pickGrid.appendChild(d);
+  });
+}
+function closeModal(){ modal.classList.remove("show"); }
+$("#charOpen").onclick=openModal;
+$("#charChange").onclick=openModal;
+$("#modalClose").onclick=closeModal;
+$("#modalBack").onclick=closeModal;
+modal.addEventListener("click",(e)=>{ if(e.target===modal) closeModal(); });
+$("#modalPick").onclick=()=>{
+  if(!tempPick) return;
+  save.selected=tempPick;
+  persist();
+  closeModal();
+  setTab("menu");
+};
+
+/* ========= Settings ========= */
+$("#resetAll").onclick=()=>{ localStorage.removeItem(STORE); location.reload(); };
+
+/* ========= Game canvas ========= */
+const canvas=$("#gameCanvas");
+const ctx=canvas.getContext("2d");
+let W=0,H=0,DPR=1;
+function resizeCanvas(){
+  const r=canvas.getBoundingClientRect();
+  DPR=Math.max(1, Math.min(2, devicePixelRatio||1));
+  W=Math.floor(r.width*DPR);
+  H=Math.floor(r.height*DPR);
+  canvas.width=W; canvas.height=H;
+}
+addEventListener("resize", resizeCanvas);
+
+/* ========= World ========= */
+const TILE=48;
+const MAP_W=50;
+const MAP_H=34;
+const WORLD_W=MAP_W*TILE;
+const WORLD_H=MAP_H*TILE;
+
+const COLORS={
+  ground:"#162d1f",
+  grass:"#0e6a36",
+  grassDark:"#0b562c",
+  wall:"#42495e",
+  wallTop:"#59627d",
+  shadow:"rgba(0,0,0,.35)",
+  aimAtkFill:"rgba(230,240,255,.18)",
+  aimAtkStroke:"rgba(230,240,255,.35)",
+  aimSupFill:"rgba(255,211,110,.18)",
+  aimSupStroke:"rgba(255,211,110,.55)",
+  bullet:"rgba(200,210,230,.65)",
+  bulletSup:"rgba(255,211,110,.78)"
+};
+
+let walls=[], grass=[];
+function pointInRect(px,py,rc){ return px>=rc.x && px<=rc.x+rc.w && py>=rc.y && py<=rc.y+rc.h; }
+function circleRectCollide(cx,cy,r,rc){
+  const nx=clamp(cx, rc.x, rc.x+rc.w);
+  const ny=clamp(cy, rc.y, rc.y+rc.h);
+  const dx=cx-nx, dy=cy-ny;
+  return dx*dx+dy*dy <= r*r;
+}
+function inGrass(x,y){
+  for(const g of grass) if(pointInRect(x,y,g)) return true;
+  return false;
+}
+// performance: fewer steps
+function lineBlocked(ax,ay,bx,by){
+  const steps=Math.ceil(Math.hypot(bx-ax,by-ay)/20);
+  for(let i=0;i<=steps;i++){
+    const t=i/steps;
+    const x=ax+(bx-ax)*t;
+    const y=ay+(by-ay)*t;
+    for(const w of walls) if(pointInRect(x,y,w)) return true;
+  }
+  return false;
+}
+function buildMap(){
+  walls=[]; grass=[];
+  const thick=2;
+
+  for(let y=0;y<MAP_H;y++){
+    for(let x=0;x<MAP_W;x++){
+      const border=(x<thick||y<thick||x>=MAP_W-thick||y>=MAP_H-thick);
+      if(border) walls.push({x:x*TILE,y:y*TILE,w:TILE,h:TILE});
+    }
+  }
+
+  // more walls (bigger map)
+  for(let i=0;i<34;i++){
+    const bw=irnd(2,5), bh=irnd(2,5);
+    const x=irnd(3,MAP_W-7-bw)*TILE;
+    const y=irnd(3,MAP_H-7-bh)*TILE;
+    for(let yy=0;yy<bh;yy++) for(let xx=0;xx<bw;xx++){
+      walls.push({x:x+xx*TILE,y:y+yy*TILE,w:TILE,h:TILE});
+    }
+  }
+
+  // grass patches
+  for(let i=0;i<26;i++){
+    const gw=irnd(3,8), gh=irnd(2,7);
+    const x=irnd(3,MAP_W-7-gw)*TILE;
+    const y=irnd(3,MAP_H-7-gh)*TILE;
+    grass.push({x,y,w:gw*TILE,h:gh*TILE});
+  }
+}
+
+function canStandAt(x,y,r){
+  if(x<r+2 || y<r+2 || x>WORLD_W-r-2 || y>WORLD_H-r-2) return false;
+  for(const w of walls) if(circleRectCollide(x,y,r,w)) return false;
+  return true;
+}
+
+function spawnPoint(minDistFrom=null, minDist=0, alsoAvoidList=null, alsoAvoidDist=0){
+  for(let k=0;k<2200;k++){
+    const x=rnd(160, WORLD_W-160);
+    const y=rnd(160, WORLD_H-160);
+
+    let bad=false;
+    for(const w of walls){ if(circleRectCollide(x,y,18,w)){ bad=true; break; } }
+    if(bad) continue;
+
+    if(minDistFrom){
+      const d=Math.hypot(x-minDistFrom.x, y-minDistFrom.y);
+      if(d < minDist) continue;
+    }
+
+    if(alsoAvoidList && alsoAvoidList.length && alsoAvoidDist>0){
+      for(const o of alsoAvoidList){
+        if(!o || o.dead) continue;
+        if(Math.hypot(x-o.x, y-o.y) < alsoAvoidDist){ bad=true; break; }
+      }
+      if(bad) continue;
+    }
+    return {x,y};
+  }
+  return {x:WORLD_W/2,y:WORLD_H/2};
+}
+
+function moveEntity(e, dt, vx, vy){
+  const nx=e.x + vx*dt;
+  const ny=e.y + vy*dt;
+
+  let tx=nx;
+  for(const w of walls){
+    if(circleRectCollide(tx, e.y, e.r, w)){
+      if(vx>0) tx = w.x - e.r - 0.5;
+      if(vx<0) tx = w.x+w.w + e.r + 0.5;
+    }
+  }
+  let ty=ny;
+  for(const w of walls){
+    if(circleRectCollide(tx, ty, e.r, w)){
+      if(vy>0) ty = w.y - e.r - 0.5;
+      if(vy<0) ty = w.y+w.h + e.r + 0.5;
+    }
+  }
+  e.x = clamp(tx, e.r+2, WORLD_W - e.r-2);
+  e.y = clamp(ty, e.r+2, WORLD_H - e.r-2);
+}
+
+/* ========= Game state ========= */
+let you=null, bots=[], bullets=[];
+let running=false, raf=0, lastT=0, gameTime=0;
+let camX=0, camY=0;
+
+/* Super/Regen */
+const SUPER = { passivePerSec: 0.018, perDamage: 0.00022, botMul: 0.60 };
+const REGEN = { lowPct: 0.55, perSecPct: 0.020, hurtBlockSec: 1.25 };
+
+/* ========= Joystick ========= */
+function makeJoy(el,knob){
+  return {el,knob,active:false,id:null,cx:0,cy:0,x:0,y:0,prevActive:false,lastX:0,lastY:0,relX:0,relY:0};
+}
+const moveJoy = makeJoy($("#moveJoy"), $("#moveKnob"));
+const atkJoy  = makeJoy($("#atkJoy"),  $("#atkKnob"));
+const supJoy  = makeJoy($("#supJoy"),  $("#supKnob"));
+
+function joyDown(J,e){
+  e.preventDefault();
+  const t=e.changedTouches[0];
+  J.active=true; J.id=t.identifier;
+  const r=J.el.getBoundingClientRect();
+  J.cx=r.left+r.width/2; J.cy=r.top+r.height/2;
+  joyMove(J,e);
+}
+function joyMove(J,e){
+  if(!J.active) return;
+  let t=null;
+  for(const tt of e.touches) if(tt.identifier===J.id) t=tt;
+  if(!t) return;
+  const dx=t.clientX-J.cx, dy=t.clientY-J.cy;
+  const max=(J.el.getBoundingClientRect().width/2)-24;
+  const len=Math.hypot(dx,dy)||1;
+  const mag=Math.min(max,len);
+  const nx=(dx/len)*mag, ny=(dy/len)*mag;
+  J.knob.style.transform=`translate(${nx}px,${ny}px) translate(-50%,-50%)`;
+  J.x = nx/max; J.y = ny/max;
+  J.lastX=J.x; J.lastY=J.y;
+}
+function joyUp(J,e){
+  if(!J.active) return;
+  let ended=false;
+  for(const tt of e.changedTouches) if(tt.identifier===J.id) ended=true;
+  if(!ended) return;
+
+  // store release direction for “release to cast”
+  J.relX = J.lastX;
+  J.relY = J.lastY;
+
+  J.active=false; J.id=null;
+  J.knob.style.transform=`translate(0px,0px) translate(-50%,-50%)`;
+  J.x=0; J.y=0;
+  // IMPORTANT FIX: ulti/aim stuff "havada kalmasın"
+  J.lastX=0; J.lastY=0;
+}
+function bindJoy(id, J){
+  const el=$(id);
+  ["touchstart","touchmove","touchend","touchcancel"].forEach(type=>{
+    el.addEventListener(type,(e)=>{
+      if(type==="touchstart") joyDown(J,e);
+      else if(type==="touchmove") joyMove(J,e);
+      else joyUp(J,e);
+    },{passive:false});
+  });
+}
+bindJoy("#moveJoy", moveJoy);
+bindJoy("#atkJoy", atkJoy);
+bindJoy("#supJoy", supJoy);
+document.addEventListener("touchmove",(e)=>{
+  if($("#game").classList.contains("active")) e.preventDefault();
+},{passive:false});
+
+/* ========= Fighters ========= */
+function makeFighter(isYou, charId, spawnNear=null, minDist=0, avoidList=null){
+  const c=getChar(charId);
+  const sp = spawnPoint(spawnNear, minDist, avoidList, 130);
+  const maxHP = c.baseHP + (isYou?save.upHP*260:0);
+  const dmg   = c.baseDMG + (isYou?save.upDMG*22:0);
+  return {
+    id: randId(),
+    isYou,
+    charId:c.id, name:c.name, role:c.role, color:c.color,
+    x:sp.x, y:sp.y, r:18,
+    hp:maxHP, max:maxHP, dmg,
+    range:c.range, speed:c.speed,
+    atk:{...c.atk},
+    sup:{...c.sup},
+    atkCD:0,
+    super:0,
+    hurtT:0,
+    dead:false,
+
+    // jump state
+    jumping:false, jT:0, jDur:0.18, jSX:0, jSY:0, jEX:0, jEY:0,
+
+    // AI state
+    think:0, tx:0, ty:0,
+    aggro:0
+  };
+}
+
+/* Visibility (grass stealth) */
+function visibleToYou(f){
+  if(!you) return true;
+  if(f.isYou) return true;
+  const d=Math.hypot(f.x-you.x, f.y-you.y);
+  if(inGrass(f.x,f.y) && d>260) return false;
+  return true;
+}
+
+/* Stronger target pick (prefer low hp nearby) */
+function nearestEnemy(me){
+  let best=null, bestScore=-1;
+  const all=[you, ...bots];
+  for(const o of all){
+    if(!o || o.dead || o.id===me.id) continue;
+    const d=Math.hypot(o.x-me.x, o.y-me.y);
+    if(d<1) continue;
+
+    // score: closer + lower hp
+    const hpFrac = o.hp / o.max;
+    const score = (1/(d)) * (1.2 - hpFrac*0.7);
+    if(score > bestScore){
+      bestScore=score; best=o;
+    }
+  }
+  return best;
+}
+
+/* Super & Damage */
+function addSuper(attacker, amount){
+  if(!attacker || attacker.dead) return;
+  attacker.super = clamp(attacker.super + amount, 0, 1);
+}
+function applyDamage(target, dmg, attacker){
+  if(target.dead) return;
+  target.hp = Math.max(0, target.hp - dmg);
+  target.hurtT = REGEN.hurtBlockSec;
+
+  if(attacker){
+    const mul = attacker.isYou ? 1 : SUPER.botMul;
+    addSuper(attacker, dmg * SUPER.perDamage * mul);
+  }
+  if(attacker?.isYou){
+    addQuestProgress("damage", dmg);
+  }
+  if(target.hp<=0 && !target.dead){
+    target.dead=true;
+    if(attacker?.isYou){
+      // kill reward stays (match win has no coin)
+      save.coin += 18; // slightly lower because 50 bot
+      addQuestProgress("kills", 1);
+      persist();
+    }
+  }
+}
+
+/* ========= Bullets ========= */
+function fireShot(from, dirx, diry, cfg){
+  const len=Math.hypot(dirx,diry)||1;
+  dirx/=len; diry/=len;
+
+  const baseSpeed=cfg.speed;
+  const range=cfg.range;
+  const dmg=cfg.dmg;
+  const pellets=cfg.pellets;
+  const spread=cfg.spread;
+  const rad=cfg.rad;
+  const kb=cfg.kb||0;
+  const isSuper=!!cfg.super;
+
+  const maxLife = range/baseSpeed;
+
+  const angles=[];
+  if(pellets<=1){ angles.push(0); }
+  else{
+    for(let i=0;i<pellets;i++){
+      const a=-spread/2 + spread*(i/(pellets-1));
+      angles.push(a);
+    }
+  }
+  for(const a of angles){
+    const ca=Math.cos(a), sa=Math.sin(a);
+    const vx = dirx*ca - diry*sa;
+    const vy = dirx*sa + diry*ca;
+
+    bullets.push({
+      x: from.x + vx*(from.r+12),
+      y: from.y + vy*(from.r+12),
+      vx: vx*baseSpeed,
+      vy: vy*baseSpeed,
+      life: maxLife,
+      maxLife,
+      fromId: from.id,
+      owner: from,
+      dmg, rad, kb,
+      super:isSuper
+    });
+  }
+}
+
+/* ========= Jump super (variable range) ========= */
+function startJump(attacker, aimx, aimy, power01){
+  const len=Math.hypot(aimx,aimy);
+  if(len<0.25) return false;
+
+  const dx=aimx/len, dy=aimy/len;
+  const maxR = attacker.sup.range;
+  const useR = maxR * clamp(power01, 0.25, 1.0); // min %25 so “mini” jump still works
+
+  const tx=attacker.x + dx*useR;
+  const ty=attacker.y + dy*useR;
+
+  let best=null, bd=1e18;
+  const all=[you, ...bots];
+  for(const o of all){
+    if(!o || o.dead || o.id===attacker.id) continue;
+    const d=(o.x-tx)*(o.x-tx) + (o.y-ty)*(o.y-ty);
+    if(d<bd){ bd=d; best=o; }
+  }
+  let ex=tx, ey=ty;
+  if(best && bd <= (150*150)){ ex=best.x; ey=best.y; }
+
+  if(!canStandAt(ex,ey,attacker.r)){
+    let ok=false;
+    for(let k=0;k<14;k++){
+      const t=1-(k/14);
+      const px=attacker.x + (ex-attacker.x)*t;
+      const py=attacker.y + (ey-attacker.y)*t;
+      if(canStandAt(px,py,attacker.r)){ ex=px; ey=py; ok=true; break; }
+    }
+    if(!ok) return false;
+  }
+
+  attacker.jumping=true;
+  attacker.jT=0;
+  attacker.jSX=attacker.x; attacker.jSY=attacker.y;
+  attacker.jEX=ex; attacker.jEY=ey;
+  return true;
+}
+function finishJump(attacker){
+  attacker.x=attacker.jEX; attacker.y=attacker.jEY;
+  attacker.jumping=false;
+
+  const dmg=Math.round(attacker.dmg * attacker.sup.dmgMul);
+  const R=attacker.sup.radius;
+  const all=[you, ...bots];
+  for(const o of all){
+    if(!o || o.dead || o.id===attacker.id) continue;
+    const dx=o.x-attacker.x, dy=o.y-attacker.y;
+    if(dx*dx+dy*dy <= R*R){
+      applyDamage(o, dmg, attacker);
+      const len=Math.hypot(dx,dy)||1;
+      moveEntity(o, 0.016, (dx/len)*145, (dy/len)*145);
+    }
+  }
+}
+
+/* ========= Bullets update + Shelly close damage ========= */
+function bulletsUpdate(dt){
+  for(const p of bullets){
+    p.x += p.vx*dt;
+    p.y += p.vy*dt;
+    p.life -= dt;
+  }
+
+  for(const p of bullets){
+    if(p.life<=0) continue;
+
+    // wall stop
+    for(const w of walls){
+      if(pointInRect(p.x,p.y,w)){ p.life=0; break; }
+    }
+    if(p.life<=0) continue;
+
+    const all=[you, ...bots];
+    for(const f of all){
+      if(!f || f.dead || f.id===p.fromId) continue;
+
+      const dx=f.x-p.x, dy=f.y-p.y;
+      if(dx*dx+dy*dy <= (f.r + p.rad)*(f.r + p.rad)){
+
+        // Shelly close-range bonus on normal attack
+        let dmg = p.dmg;
+        if(p.owner && p.owner.charId==="shelly" && !p.super){
+          const traveledFrac = clamp((p.maxLife - p.life)/p.maxLife, 0, 1);
+          // close -> bigger: 1.55 ; far -> 0.75
+          const mul = 0.75 + 0.80*(1 - traveledFrac);
+          dmg = Math.round(dmg * mul);
+        }
+
+        applyDamage(f, dmg, p.owner);
+
+        // knockback
+        if(p.kb>0){
+          const len=Math.hypot(dx,dy)||1;
+          moveEntity(f, 0.016, (-dx/len)*p.kb, (-dy/len)*p.kb);
+        }
+
+        p.life=0;
+        break;
+      }
+    }
+  }
+
+  bullets = bullets.filter(p=>p.life>0);
+}
+
+/* ========= Player update ========= */
+function playerUpdate(dt){
+  if(!you || you.dead) return;
+
+  you.atkCD -= dt;
+  you.hurtT = Math.max(0, you.hurtT - dt);
+  addSuper(you, SUPER.passivePerSec * dt);
+
+  // regen
+  const atkLen = Math.hypot(atkJoy.x, atkJoy.y);
+  const notShooting = atkLen < 0.18;
+  const lowHP = you.hp < you.max * REGEN.lowPct;
+  if(notShooting && lowHP && you.hurtT<=0 && !you.jumping){
+    you.hp = Math.min(you.max, you.hp + (you.max*REGEN.perSecPct)*dt);
+  }
+
+  // jump anim
+  if(you.jumping){
+    you.jT += dt;
+    const t=Math.min(1, you.jT/you.jDur);
+    const ease = t<0.5 ? (2*t*t) : (1 - Math.pow(-2*t+2,2)/2);
+    you.x = you.jSX + (you.jEX-you.jSX)*ease;
+    you.y = you.jSY + (you.jEY-you.jSY)*ease;
+    if(t>=1) finishJump(you);
+    return;
+  }
+
+  // movement
+  moveEntity(you, dt, moveJoy.x*you.speed, moveJoy.y*you.speed);
+
+  // attack
+  if(atkLen>0.35 && you.atkCD<=0){
+    const c=getChar(you.charId);
+    fireShot(you, atkJoy.x, atkJoy.y, {
+      super:false,
+      speed:c.atk.bulletSpeed,
+      range:you.range,
+      dmg:Math.round(you.dmg * c.atk.dmgMul),
+      pellets:c.atk.pellets,
+      spread:c.atk.spread,
+      rad:c.atk.bulletRad,
+      kb:0
+    });
+    you.atkCD = c.atk.cooldown;
+  }
+
+  // super cast on release
+  const was=supJoy.prevActive;
+  const now=supJoy.active;
+  if(was && !now){
+    const sx=supJoy.relX, sy=supJoy.relY;
+    const sLen=Math.hypot(sx,sy);
+
+    if(sLen>0.35){
+      if(you.super < 1){
+        toast("Ulti daha dolmadı");
+      } else {
+        const c=getChar(you.charId);
+        const power = clamp(sLen, 0, 1);
+
+        if(c.sup.type==="jump"){
+          if(startJump(you, sx, sy, power)) you.super=0;
+        } else if(c.sup.type==="megaShot"){
+          fireShot(you, sx, sy, {
+            super:true,
+            speed:690,
+            range:c.sup.range,
+            dmg:Math.round(you.dmg * c.sup.dmgMul),
+            pellets:c.sup.pellets,
+            spread:c.sup.spread,
+            rad:7,
+            kb:c.sup.knock
+          });
+          you.super=0;
+        }
+      }
+    }
+  }
+  supJoy.prevActive = supJoy.active;
+}
+
+/* ========= Stronger bot AI ========= */
+function botUpdate(b, dt){
+  if(!b || b.dead) return;
+
+  b.atkCD -= dt;
+  b.hurtT = Math.max(0, b.hurtT - dt);
+  addSuper(b, SUPER.passivePerSec * SUPER.botMul * dt);
+
+  if(b.jumping){
+    b.jT += dt;
+    const t=Math.min(1, b.jT/b.jDur);
+    const ease = t<0.5 ? (2*t*t) : (1 - Math.pow(-2*t+2,2)/2);
+    b.x = b.jSX + (b.jEX-b.jSX)*ease;
+    b.y = b.jSY + (b.jEY-b.jSY)*ease;
+    if(t>=1) finishJump(b);
+    return;
+  }
+
+  const target = nearestEnemy(b);
+  if(!target) return;
+
+  const dx=target.x-b.x, dy=target.y-b.y;
+  const d=Math.hypot(dx,dy)||1;
+  const ux=dx/d, uy=dy/d;
+
+  // aggression grows when close
+  b.aggro = clamp(b.aggro + dt*(d<260?0.8:0.25), 0, 1);
+
+  // keep distance by role
+  const role = b.charId;
+  let prefer = b.range*0.78;
+  if(role==="edgar"||role==="kit") prefer=b.range*0.60;
+
+  // movement: approach/retreat + strafing
+  let mvx=ux, mvy=uy;
+  if(d < prefer*0.60) { mvx=-ux; mvy=-uy; }
+  if(d > prefer*1.08) { mvx=ux;  mvy=uy;  }
+
+  // strafe stronger
+  const phase = (parseFloat("0."+b.id.slice(2,6)) || 0.3);
+  const str = Math.sin((performance.now()/230) + phase) * (0.9*b.aggro + 0.25);
+  mvx = mvx*0.82 + (-uy*str)*0.18;
+  mvy = mvy*0.82 + ( ux*str)*0.18;
+
+  // avoid walls
+  const ax=b.x + mvx*52, ay=b.y + mvy*52;
+  for(const w of walls){
+    if(circleRectCollide(ax,ay,b.r,w)){
+      const t=(Math.random()>0.5?1:-1);
+      const ang = 1.15*t;
+      const nx = mvx*Math.cos(ang) - mvy*Math.sin(ang);
+      const ny = mvx*Math.sin(ang) + mvy*Math.cos(ang);
+      mvx=nx; mvy=ny;
+      break;
+    }
+  }
+  moveEntity(b, dt, mvx*b.speed*(0.95+0.15*b.aggro), mvy*b.speed*(0.95+0.15*b.aggro));
+
+  // line of sight
+  const blocked = lineBlocked(b.x,b.y,target.x,target.y);
+
+  // predictive aim (small lead)
+  let aimx=ux, aimy=uy;
+  // lead based on distance
+  const lead = clamp(d/900, 0.0, 0.55);
+  // approximate: aim slightly ahead in target direction (uses target motion if player moving)
+  let tvx=0, tvy=0;
+  if(target.isYou){ tvx = moveJoy.x*target.speed*0.55; tvy = moveJoy.y*target.speed*0.55; }
+  const px = target.x + tvx*lead;
+  const py = target.y + tvy*lead;
+  const pdx = px - b.x, pdy = py - b.y;
+  const plen = Math.hypot(pdx,pdy)||1;
+  aimx = pdx/plen; aimy = pdy/plen;
+
+  // shoot more often
+  if(d <= b.range && !blocked && b.atkCD<=0){
+    const c=getChar(b.charId);
+    fireShot(b, aimx, aimy, {
+      super:false,
+      speed:c.atk.bulletSpeed*0.98,
+      range:b.range,
+      dmg:Math.round(b.dmg * c.atk.dmgMul),
+      pellets:c.atk.pellets,
+      spread:c.atk.spread*(0.95), // a bit tighter
+      rad:c.atk.bulletRad,
+      kb:0
+    });
+    b.atkCD = c.atk.cooldown*(0.92); // more frequent
+  }
+
+  // super usage more decisive
+  if(b.super>=1){
+    const c=getChar(b.charId);
+
+    if(c.sup.type==="jump"){
+      // jump if can reach and either close OR target low HP
+      const wants = (d <= c.sup.range && (!blocked) && (target.hp/target.max < 0.55 || d < 260));
+      if(wants && Math.random()<0.10){
+        const power = clamp(d/c.sup.range, 0.35, 1.0);
+        if(startJump(b, aimx, aimy, power)) b.super=0;
+      }
+    } else if(c.sup.type==="megaShot"){
+      if(d <= c.sup.range && !blocked && Math.random()<0.10){
+        fireShot(b, aimx, aimy, {
+          super:true,
+          speed:670,
+          range:c.sup.range,
+          dmg:Math.round(b.dmg * c.sup.dmgMul),
+          pellets:c.sup.pellets,
+          spread:c.sup.spread,
+          rad:7,
+          kb:c.sup.knock
+        });
+        b.super=0;
+      }
+    }
+  }
+}
+
+/* ========= Render ========= */
+function drawMap(){
+  ctx.fillStyle=COLORS.ground;
+  ctx.fillRect(0,0,W,H);
+
+  for(const g of grass){
+    const x=(g.x-camX)*DPR, y=(g.y-camY)*DPR;
+    ctx.fillStyle=COLORS.grass;
+    ctx.fillRect(x,y,g.w*DPR,g.h*DPR);
+    ctx.fillStyle=COLORS.grassDark;
+    for(let i=0;i<6;i++){
+      const gx = x + rnd(0,g.w*DPR);
+      const gy = y + rnd(0,g.h*DPR);
+      ctx.fillRect(gx,gy,6*DPR,10*DPR);
+    }
+  }
+
+  for(const w of walls){
+    const x=(w.x-camX)*DPR, y=(w.y-camY)*DPR;
+    ctx.fillStyle=COLORS.shadow;
+    ctx.fillRect(x+4*DPR,y+6*DPR,w.w*DPR,w.h*DPR);
+    ctx.fillStyle=COLORS.wall;
+    ctx.fillRect(x,y,w.w*DPR,w.h*DPR);
+    ctx.fillStyle=COLORS.wallTop;
+    ctx.fillRect(x,y,w.w*DPR,8*DPR);
+  }
+}
+
+/* BS aim visuals */
+function drawCone(px, py, dirx, diry, range, halfAngle, fill, stroke){
+  const len = Math.hypot(dirx, diry);
+  if(len < 0.001) return;
+  dirx/=len; diry/=len;
+
+  const a1 = -halfAngle, a2 = halfAngle;
+  const c1=Math.cos(a1), s1=Math.sin(a1);
+  const c2=Math.cos(a2), s2=Math.sin(a2);
+
+  const vx1 = dirx*c1 - diry*s1;
+  const vy1 = dirx*s1 + diry*c1;
+  const vx2 = dirx*c2 - diry*s2;
+  const vy2 = dirx*s2 + diry*c2;
+
+  const x1 = px + vx1*range, y1 = py + vy1*range;
+  const x2 = px + vx2*range, y2 = py + vy2*range;
+
+  ctx.save();
+  ctx.fillStyle = fill;
+  ctx.beginPath();
+  ctx.moveTo(px, py);
+  ctx.lineTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = 3*DPR;
+  ctx.beginPath();
+  ctx.moveTo(px, py); ctx.lineTo(x1, y1);
+  ctx.moveTo(px, py); ctx.lineTo(x2, y2);
+  ctx.stroke();
+  ctx.restore();
+}
+function drawLine(px, py, tx, ty, col){
+  ctx.strokeStyle = col;
+  ctx.lineWidth = 4*DPR;
+  ctx.beginPath();
+  ctx.moveTo(px, py);
+  ctx.lineTo(tx, ty);
+  ctx.stroke();
+}
+function drawTargetCircle(tx, ty, r, fill, stroke){
+  ctx.fillStyle = fill;
+  ctx.beginPath();
+  ctx.arc(tx, ty, r, 0, Math.PI*2);
+  ctx.fill();
+
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = 4*DPR;
+  ctx.beginPath();
+  ctx.arc(tx, ty, r, 0, Math.PI*2);
+  ctx.stroke();
+}
+
+function drawAim(){
+  if(!you || you.dead) return;
+
+  const px=(you.x-camX)*DPR;
+  const py=(you.y-camY)*DPR;
+
+  // Attack cone ONLY when joystick is ACTIVE (so it never “hangs”)
+  if(atkJoy.active){
+    const ax = atkJoy.x, ay = atkJoy.y;
+    const aLen = Math.hypot(ax, ay);
+    if(aLen > 0.25){
+      const c = getChar(you.charId);
+      const halfAngle = (c.atk.spread * 0.55);
+      drawCone(px, py, ax, ay, you.range*DPR, halfAngle, COLORS.aimAtkFill, COLORS.aimAtkStroke);
+    }
+  }
+
+  // Super aim ONLY when ACTIVE (fix “yellow stays in air”)
+  if(supJoy.active){
+    const sx = supJoy.x, sy = supJoy.y;
+    const sLen = Math.hypot(sx, sy);
+    if(sLen > 0.25){
+      const c = getChar(you.charId);
+
+      if(c.sup.type === "jump"){
+        // variable range by joystick magnitude
+        const power = clamp(sLen, 0, 1);
+        const useR = c.sup.range * clamp(power, 0.25, 1.0);
+
+        const dx = sx/sLen, dy = sy/sLen;
+        const tx = (you.x + dx*useR - camX)*DPR;
+        const ty = (you.y + dy*useR - camY)*DPR;
+
+        drawLine(px, py, tx, ty, COLORS.aimSupStroke);
+        drawTargetCircle(
+          tx, ty,
+          (c.sup.radius*0.85)*DPR,
+          COLORS.aimSupFill,
+          COLORS.aimSupStroke
+        );
+      } else {
+        const halfAngle = (c.sup.spread * 0.60);
+        drawCone(px, py, sx, sy, c.sup.range*DPR, halfAngle, COLORS.aimSupFill, COLORS.aimSupStroke);
+      }
+    }
+  }
+}
+
+function drawFighter(f){
+  if(you && !visibleToYou(f)) return;
+
+  const x=(f.x-camX)*DPR, y=(f.y-camY)*DPR;
+
+  ctx.fillStyle="rgba(0,0,0,.35)";
+  ctx.beginPath();
+  ctx.ellipse(x, y+16*DPR, 20*DPR, 8*DPR, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  if(f.jumping){
+    ctx.strokeStyle="rgba(255,211,110,.55)";
+    ctx.lineWidth=4*DPR;
+    ctx.beginPath();
+    ctx.arc(x,y,(f.r+10)*DPR,0,Math.PI*2);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle=f.color;
+  ctx.beginPath();
+  ctx.arc(x,y,f.r*DPR,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.font = `${12*DPR}px system-ui`;
+  ctx.textAlign="center";
+  ctx.fillStyle="rgba(233,240,255,.95)";
+  ctx.fillText(f.name, x, y - 26*DPR);
+
+  const bw=82*DPR, bh=10*DPR;
+  const px=x-bw/2, py=y-20*DPR;
+  ctx.fillStyle="rgba(255,255,255,.10)";
+  ctx.fillRect(px,py,bw,bh);
+  ctx.fillStyle=f.isYou ? "rgba(87,255,178,.88)" : "rgba(255,92,122,.88)";
+  ctx.fillRect(px,py,bw*(f.hp/f.max),bh);
+  ctx.strokeStyle="rgba(255,255,255,.18)";
+  ctx.strokeRect(px,py,bw,bh);
+}
+
+function drawBullets(){
+  for(const p of bullets){
+    const x=(p.x-camX)*DPR, y=(p.y-camY)*DPR;
+    ctx.fillStyle = p.super ? COLORS.bulletSup : COLORS.bullet;
+    ctx.beginPath();
+    ctx.arc(x,y,(4+p.rad)*DPR,0,Math.PI*2);
+    ctx.fill();
+  }
+}
+
+function render(){
+  if(you){
+    const vw=W/DPR, vh=H/DPR;
+    camX = clamp(you.x - vw/2, 0, WORLD_W - vw);
+    camY = clamp(you.y - vh/2, 0, WORLD_H - vh);
+  }
+
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,W,H);
+
+  drawMap();
+  drawAim();
+  drawBullets();
+
+  if(you && !you.dead) drawFighter(you);
+  for(const b of bots) if(b && !b.dead) drawFighter(b);
+
+  $("#hudTime").textContent = Math.floor(gameTime);
+  $("#hudAlive").textContent = bots.filter(b=>!b.dead).length;
+  $("#hudHP").textContent = `${Math.round(you?.hp||0)}/${Math.round(you?.max||0)}`;
+  $("#hudSuper").textContent = `${Math.floor((you?.super||0)*100)}%`;
+
+  $("#supJoy").classList.toggle("ready", !!you && you.super>=1);
+}
+
+/* ========= Win/Lose screens ========= */
+function showResult(title, sub){
+  $("#resultTitle").textContent = title;
+  $("#resultSub").textContent = sub;
+  $("#resultOverlay").classList.add("show");
+}
+function hideResult(){
+  $("#resultOverlay").classList.remove("show");
+}
+$("#resultMenu").onclick=()=>{
+  hideResult();
+  stopGame();
+  setTab("menu");
+};
+$("#resultReplay").onclick=()=>{
+  hideResult();
+  stopGame();
+  setTab("game");
+  startGame();
+};
+
+/* ========= End conditions ========= */
+function endWin(){
+  // match win: NO COIN (as requested)
+  save.trophy += 8;
+  addQuestProgress("wins", 1);
+  persist();
+  showResult("KAZANDIN! 🏆", `+8 kupa • Coin yok (kural) • Coin: kill + görev`);
+  running=false;
+}
+function endLose(){
+  showResult("KAYBETTİN 💀", `Tekrar oyna ya da menüye dön.`);
+  running=false;
+}
+
+/* ========= Loop ========= */
+function loop(ts){
+  if(!running) return;
+  const t=ts/1000;
+  const dt=Math.min(0.033, (t-lastT)||0.016);
+  lastT=t;
+  gameTime += dt;
+
+  playerUpdate(dt);
+  for(const b of bots) botUpdate(b, dt);
+  bulletsUpdate(dt);
+
+  if(you && you.dead){ endLose(); return; }
+  if(bots.every(b=>b.dead)){ endWin(); return; }
+
+  render();
+  raf=requestAnimationFrame(loop);
+}
+
+function startGame(){
+  if(!save.selected){ toast("Önce karakter seç"); openModal(); return; }
+
+  $("#resultOverlay").classList.remove("show");
+
+  resizeCanvas();
+  buildMap();
+  bullets=[]; bots=[]; gameTime=0;
+
+  you = makeFighter(true, save.selected, null, 0, null);
+  $("#hudYou").textContent = you.name;
+
+  for(let i=0;i<BOT_COUNT;i++){
+    const cid = CHARS[irnd(0,CHARS.length-1)].id;
+    const b = makeFighter(false, cid, you, 950, bots); // far from you, also spaced from each other
+    // bots don't get upgrades
+    const base = getChar(b.charId);
+    b.max = base.baseHP;
+    b.hp  = b.max;
+    b.dmg = base.baseDMG;
+    bots.push(b);
+  }
+
+  running=true;
+  lastT=0;
+  toast("Savaş başladı");
+  raf=requestAnimationFrame(loop);
+}
+
+function stopGame(){
+  running=false;
+  cancelAnimationFrame(raf);
+}
+
+/* Buttons */
+$("#playBtn").onclick=()=>{ setTab("game"); startGame(); };
+$("#playBtn2").onclick=()=>{ setTab("game"); startGame(); };
+$("#exitGame").onclick=()=>{ hideResult(); stopGame(); setTab("menu"); };
+$("#replayGame").onclick=()=>{ hideResult(); stopGame(); setTab("game"); startGame(); };
+
+/* Init */
+ensureQuests();
+persist();
+renderTop(); renderMenu(); renderShop(); renderQuests();
+</script>
+</body>
+</html>

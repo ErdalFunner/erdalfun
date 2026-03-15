@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Erdal Fun | Pro v14</title>
+    <style>
+        :root { --p: #007aff; --bg: #000; --txt: #fff; --gold: #ffd700; --red: #ff3b30; }
+        body, html { margin:0; padding:0; height:100%; font-family: 'Segoe UI', sans-serif; background: #000; color: #fff; overflow: hidden; }
+        .page { display:none; height:100vh; width:100vw; position:fixed; flex-direction:column; align-items:center; justify-content:center; }
+        .active { display:flex; }
+        .stats-bar { position:absolute; top:15px; right:15px; background:rgba(255,255,255,0.1); padding:10px 20px; border-radius:50px; display:flex; align-items:center; gap:10px; z-index:100; border:1px solid var(--gold); }
+        .card-grid { display:grid; grid-template-columns: 1fr 1fr; gap:15px; padding:20px; width:90%; max-width:500px; }
+        .card { background:#1c1c1e; border-radius:20px; padding:20px; text-align:center; border:1px solid #333; cursor:pointer; }
+        .locked { opacity: 0.4; filter: grayscale(1); }
+        .back { position:absolute; top:20px; left:20px; background:#333; color:#fff; border:none; padding:10px 15px; border-radius:12px; z-index:110; }
+        
+        /* Modal - Öğretici & Ayarlar */
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:200; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
+        .modal-content { background:#1c1c1e; padding:25px; border-radius:25px; border:2px solid var(--p); max-width:400px; width:100%; text-align:center; }
+        
+        #d-can { background: #000; touch-action: none; border: 1px solid #222; }
+        .guide-circle { position: absolute; width: 250px; height: 250px; border: 4px dashed rgba(255, 215, 0, 0.2); border-radius: 50%; pointer-events: none; }
+        #cl-btn { width:130px; height:130px; border-radius:50%; background:radial-gradient(#ff3b30, #8b0000); color:white; border:8px solid #333; font-weight:bold; cursor:pointer; }
+        input { background:#222; border:2px solid #444; color:white; padding:15px; border-radius:12px; width:85%; text-align:center; font-size: 1.1rem; outline:none; }
+        #toast { position:fixed; bottom:-100px; left:50%; transform:translateX(-50%); background:var(--gold); color:black; padding:15px 35px; border-radius:50px; font-weight:bold; transition: 0.5s; z-index:1000; }
+    </style>
+</head>
+<body>
+
+<div id="toast">🟡 ERDAL JETONU KAZANDIN!</div>
+<div class="stats-bar"><span id="jeton-count">0/5</span> 🪙</div>
+
+<div id="home" class="page active">
+    <h1>ERDAL FUN 🚀</h1>
+    <div style="display:flex; gap:10px; margin-bottom:15px;">
+        <button onclick="toggleModal('m-guide', true)" style="background:var(--p); border:none; color:white; padding:8px 15px; border-radius:10px;">❓ Nasıl Oynanır?</button>
+        <button onclick="toggleModal('m-settings', true)" style="background:#444; border:none; color:white; padding:8px 15px; border-radius:10px;">⚙️ Ayarlar</button>
+    </div>
+    <div class="card-grid">
+        <div class="card" onclick="openPage('p-hiz')"><span>⚡</span>Hız Testi</div>
+        <div class="card" onclick="initCircle()"><span>⭕</span>Daire (%70)</div>
+        <div class="card" onclick="initYazi()"><span>⌨️</span>Hızlı Yazma</div>
+        <div class="card" onclick="openPage('p-click')"><span>🖱️</span>Clicker Pro</div>
+        <div class="card" onclick="initInek()"><span>🐮</span>İnek Nerede?</div>
+        <div class="card locked" id="card-voxel" onclick="goPremium('voxel.html')">🔒 🧱 Voxel</div>
+        <div class="card locked" id="card-mini" onclick="goPremium('mini.html')">🔒 ⚔️ Arena</div>
+    </div>
+</div>
+
+<div id="m-guide" class="modal">
+    <div class="modal-content">
+        <h2 style="color:var(--p)">📖 Öğretici</h2>
+        <div style="text-align:left; font-size:14px; margin:15px 0;">
+            <p>• <b>Hız Testi:</b> 320ms altına in.</p>
+            <p>• <b>Daire:</b> %70 benzerlikle tam tur çiz.</p>
+            <p>• <b>Hızlı Yazma:</b> <b>Süre/Harf < 1.5</b> olmalı! (ZOR)</p>
+            <p>• <b>Clicker:</b> 5500 puana ulaş.</p>
+            <p>• <b>İnek:</b> Sesin arttığı yeri tıkla.</p>
+        </div>
+        <button onclick="toggleModal('m-guide', false)" style="width:100%; padding:10px; background:var(--p); color:white; border:none; border-radius:10px;">Anladım!</button>
+    </div>
+</div>
+
+<div id="m-settings" class="modal">
+    <div class="modal-content">
+        <h2>⚙️ Ayarlar</h2>
+        <button onclick="resetAllData()" style="width:100%; padding:15px; background:var(--red); color:white; border:none; border-radius:10px; font-weight:bold;">⚠️ VERİLERİ SIFIRLA</button>
+        <button onclick="toggleModal('m-settings', false)" style="width:100%; padding:10px; margin-top:10px; background:#444; color:white; border:none; border-radius:10px;">Kapat</button>
+    </div>
+</div>
+
+<div id="p-hiz" class="page" onclick="hizLogic()"><button class="back" onclick="goHome()">Geri</button><h1 id="h-txt">BAŞLA</h1></div>
+
+<div id="p-daire" class="page">
+    <button class="back" onclick="goHome()">Geri</button>
+    <h2 id="d-res" style="position:absolute; top:80px; color:var(--gold);">%0</h2>
+    <div class="guide-circle"></div>
+    <canvas id="d-can" width="350" height="350"></canvas>
+</div>
+
+<div id="p-yazi" class="page">
+    <button class="back" onclick="goHome()">Geri</button>
+    <button onclick="initYazi()" style="margin-bottom:10px; background:#444; color:white; border:none; padding:8px 20px; border-radius:10px;">Yeni Cümle</button>
+    <h3 id="y-target" style="padding:15px; text-align:center; color:#007aff; min-height:60px;">...</h3>
+    <input type="text" id="y-in" oninput="yaziKontrol()" placeholder="Hız Sınırı: 1.5!">
+    <div id="y-stat" style="margin-top:15px; color:#2ecc71;"></div>
+</div>
+
+<div id="p-click" class="page">
+    <button class="back" onclick="goHome()">Geri</button>
+    <h1 id="cl-count">0</h1>
+    <button id="cl-btn" onclick="clClick(event)">TIKLA!</button>
+    <div id="cl-shop" style="width:90%; max-height:150px; overflow-y:auto; margin-top:10px;"></div>
+</div>
+
+<div id="p-inek" class="page">
+    <button class="back" onclick="goHome()">Geri</button>
+    <div id="hearts" style="font-size:2rem;">❤️❤️❤️</div>
+    <div id="saman" style="width:80px; height:80px; font-size:3.5rem; position:absolute; touch-action:none; display:flex; align-items:center; justify-content:center;">🌾</div>
+    <button onclick="inekBul()" style="position:absolute; bottom:30px; padding:10px 30px; background:#2ecc71; border:none; color:white; border-radius:20px;">BURADA!</button>
+</div>
+
+<script>
+let jetonlar = JSON.parse(localStorage.getItem('erdal_jetonlar')) || { hiz:false, daire:false, yazi:false, click:false, inek:false };
+let auCtx;
+
+function save() {
+    localStorage.setItem('erdal_jetonlar', JSON.stringify(jetonlar));
+    let total = Object.values(jetonlar).filter(v=>v===true).length;
+    document.getElementById('jeton-count').innerText = `${total}/5`;
+    if(total>=5){
+        document.getElementById('card-voxel').classList.remove('locked');
+        document.getElementById('card-mini').classList.remove('locked');
+    }
+}
+window.onload = save;
+
+function giveJeton(k) {
+    if(!jetonlar[k]) {
+        jetonlar[k]=true; save();
+        const t=document.getElementById('toast'); t.style.bottom='40px'; setTimeout(()=>t.style.bottom='-100px',2000);
+    }
+}
+
+function resetAllData() { if(confirm("Tüm veriler sıfırlansın mı?")) { localStorage.clear(); location.reload(); } }
+function toggleModal(id, show) { document.getElementById(id).style.display = show ? 'flex' : 'none'; }
+function openPage(id) { document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+function goHome() { openPage('home'); document.body.style.background = "#000"; }
+function goPremium(url) { if(Object.values(jetonlar).filter(v=>v===true).length>=5) window.location.href=url; else alert("5 Jeton Lazım!"); }
+
+// HIZ
+let hS=0, hT, hStart;
+function hizLogic(){
+    const p=document.getElementById('p-hiz'), t=document.getElementById('h-txt');
+    if(hS===0){ hS=1; t.innerText='BEKLE'; p.style.background='red'; hT=setTimeout(()=>{hS=2; t.innerText='BAS'; p.style.background='green'; hStart=Date.now();},Math.random()*2000+1000); }
+    else if(hS===1){ clearTimeout(hT); hS=0; t.innerText='ERKEN!'; p.style.background='#000'; }
+    else { let r=Date.now()-hStart; t.innerText=r+'ms'; hS=0; p.style.background='#000'; if(r<=320) giveJeton('hiz'); }
+}
+
+// DAİRE
+function initCircle(){
+    openPage('p-daire'); const c=document.getElementById('d-can'), x=c.getContext('2d');
+    let pts=[], draw=false;
+    c.onpointerdown=(e)=>{ draw=true; pts=[]; x.clearRect(0,0,350,350); };
+    c.onpointermove=(e)=>{ if(!draw) return; let rect=c.getBoundingClientRect(), px=e.clientX-rect.left, py=e.clientY-rect.top; pts.push({px,py}); x.fillStyle="white"; x.fillRect(px,py,4,4); };
+    c.onpointerup=()=>{ draw=false; if(pts.length < 30) return;
+        let targetR = 125, mx = 175, my = 175, totalErr = 0;
+        pts.forEach(p => { totalErr += Math.abs(Math.hypot(p.px - mx, p.py - my) - targetR); });
+        let score = Math.max(0, 100 - (totalErr / pts.length * 2.2));
+        document.getElementById('d-res').innerText = "%" + score.toFixed(1);
+        if(score >= 70) giveJeton('daire');
+    };
+}
+
+// YAZMA (1.5 Sınırı)
+const words=["Hızlı olan kazansın!","Erdal Fun v14 dünyasına hoş geldin.","Klavye hızı burada test ediliyor.","Zaman en büyük hazinedir, unutma.","Yazılım öğrenmek geleceği inşa etmektir."];
+let yS, yA=false, yC, yDone=false;
+function initYazi(){
+    openPage('p-yazi'); yC=words[Math.floor(Math.random()*words.length)];
+    document.getElementById('y-target').innerText=yC;
+    document.getElementById('y-in').value=''; yA=false; yDone=false; document.getElementById('y-stat').innerText='';
+}
+function yaziKontrol(){
+    if(yDone) return;
+    const i=document.getElementById('y-in'); if(!yA && i.value.length > 0){yS=Date.now(); yA=true;}
+    if(i.value === yC){ 
+        yDone=true; let finalTime = (Date.now()-yS)/1000;
+        let finalRatio = (finalTime / yC.length).toFixed(3);
+        document.getElementById('y-stat').innerHTML = `Oran: ${finalRatio} (Sınır 1.5)`;
+        if(parseFloat(finalRatio) < 1.5) giveJeton('yazi');
+    }
+}
+
+// CLICKER & İNEK (v13 ile aynı, stabil korundu)
+let sc = parseInt(localStorage.getItem('cl_score')) || 0;
+let auto=0, items=[{n:'Fare',c:50,p:1},{n:'Robot',c:500,p:10},{n:'CPU',c:5000,p:100}];
+function clClick(e){
+    sc++; updateCl();
+    const p = document.createElement('div'); p.style.position='fixed'; p.innerText = '+1'; p.style.left = e.clientX + 'px'; p.style.top = e.clientY + 'px'; p.style.color='var(--gold)'; p.style.pointerEvents='none'; document.body.appendChild(p);
+    setTimeout(() => p.remove(), 600); if(sc>=5500) giveJeton('click');
+}
+function updateCl(){
+    document.getElementById('cl-count').innerText=Math.floor(sc); localStorage.setItem('cl_score', sc);
+    let h=''; items.forEach((it,idx)=>{ h+=`<div style="display:flex; justify-content:space-between; background:#222; margin:5px; padding:8px; border-radius:8px;"><span>${it.n}</span> <button onclick="buyCl(${idx})">${it.c}</button></div>`;});
+    document.getElementById('cl-shop').innerHTML=h;
+}
+function buyCl(i){ if(sc>=items[i].c){sc-=items[i].c; auto+=items[i].p; items[i].c=Math.floor(items[i].c*1.6); updateCl();}}
+setInterval(()=>{if(auto>0){sc+=auto/10; updateCl(); if(sc>=5500) giveJeton('click');}},100);
+updateCl();
+
+let cp={x:0,y:0}, lv=3;
+function initInek(){
+    openPage('p-inek'); lv=3; document.getElementById('hearts').innerText="❤️❤️❤️"; cp={x:Math.random()*250+50, y:Math.random()*350+100};
+    if(!auCtx) auCtx = new AudioContext();
+    const s=document.getElementById('saman');
+    s.onpointermove=(e)=>{
+        if(auCtx.state==='suspended') auCtx.resume();
+        s.style.left=(e.clientX-40)+'px'; s.style.top=(e.clientY-40)+'px';
+        let d=Math.hypot(e.clientX-cp.x, e.clientY-cp.y);
+        if(Math.random()>(d/600)){
+            let o=auCtx.createOscillator(), g=auCtx.createGain(); o.type='square'; o.frequency.value=140 - (d/12); g.gain.value=0.03; o.connect(g); g.connect(auCtx.destination); o.start(); o.stop(auCtx.currentTime+0.1);
+        }
+    };
+}
+function inekBul(){
+    let s=document.getElementById('saman'); let d=Math.hypot(parseInt(s.style.left)+40-cp.x, parseInt(s.style.top)+40-cp.y);
+    if(d<100){ giveJeton('inek'); alert("Buldun!"); goHome(); } else { lv--; document.getElementById('hearts').innerText="❤️".repeat(lv); if(lv<=0) goHome(); }
+}
+</script>
+</body>
+</html>
