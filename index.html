@@ -165,16 +165,27 @@ function hizLogic(){
     else { let r=Date.now()-hStart; t.innerText=r+'ms'; hS=0; p.style.background='#000'; if(r<=320) giveJeton('hiz'); }
 }
 
-// DAİRE (%85)
+// DAİRE (%85) - BUG FİXED
 function initCircle(){
     openPage('p-daire'); const c=document.getElementById('d-can'), x=c.getContext('2d');
     let pts=[], draw=false;
     c.onpointerdown=(e)=>{ draw=true; pts=[]; x.clearRect(0,0,350,350); };
     c.onpointermove=(e)=>{ if(!draw) return; let rect=c.getBoundingClientRect(), px=e.clientX-rect.left, py=e.clientY-rect.top; pts.push({px,py}); x.fillStyle="white"; x.fillRect(px,py,4,4); };
-    c.onpointerup=()=>{ draw=false; if(pts.length < 30) return;
+    c.onpointerup=()=>{ 
+        draw=false; 
+        if(pts.length < 60) { // Yeterli çizim yapılmadıysa iptal et
+            document.getElementById('d-res').innerText = "%0";
+            return; 
+        }
         let targetR = 125, mx = 175, my = 175, totalErr = 0;
         pts.forEach(p => { totalErr += Math.abs(Math.hypot(p.px - mx, p.py - my) - targetR); });
         let score = Math.max(0, 100 - (totalErr / pts.length * 2.2));
+        
+        // Yarım daire hilesini engelleme:
+        let start = pts[0], end = pts[pts.length-1];
+        let gap = Math.hypot(start.px - end.px, start.py - end.py);
+        if(gap > 110) score = score / 2; 
+
         document.getElementById('d-res').innerText = "%" + score.toFixed(1);
         if(score >= 85) giveJeton('daire');
     };
